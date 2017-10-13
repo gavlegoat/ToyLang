@@ -1,0 +1,73 @@
+This is the grammar I'm using. In general capitalized words refer to nonterminal
+symbols, all caps words are terminals with regular expressions, lower case words
+are keywords, and symbols are literal. I use [.]+ and [.]* for lists to make
+things a little simpler. Note that functions have a slightly weird syntax
+because I want to make sure whitespace is unimportant. A function might look
+like:
+
+>>> foo (Int -> Int -> Bool) is
+>>> foo 0 0 = false and
+>>> foo 1 1 = true and
+>>> foo a b = a < b
+
+Also note that comments are haskell style, i.e., they may be -- to \n or they
+may be {* to *}. Functions are curried so function application always occurs
+between exactly two expressions and should be left associative.
+
+Program ::= [Declaration]+
+
+Declaration ::= Function
+              | Datatype
+
+Function ::= ID ( FunType ) is [FunDef and]* FunDef
+
+FunType ::= [TYPE ->]* TYPE
+
+FunDef ::= ID [PExpr]* = Expr
+
+Datatype ::= data TYPE = [Constructor |]* Constructor
+
+Constructor ::= TYPE [TYPE]*
+
+Expr ::= ID                          -- Variable reference
+         INT                         -- Integer literal
+         STRING                      -- String literal
+         true                        -- Boolean literal true
+         false                       -- Boolean literal false
+         Expr + Expr                 -- Arithmetic Expressions
+         Expr - Expr                 --
+         Expr * Expr                 --
+         Expr / Expr                 --
+         ~ Expr                      -- Arithmetic negation
+         Expr < Expr                 -- Comparison operators
+         Expr == Expr                --
+         Expr <= Expr                --
+         Expr && Expr                -- Boolean expressions
+         Expr || Expr                --
+         not Expr                    --
+         ([Expr ,]* Expr)            -- Tuple construction
+         ( )                         -- Unit value
+         Expr : Expr                 -- List construction
+         [ ]                         -- Empty list
+         let ID = Expr in Expr       --
+         case Expr of [CaseBranch]+  --
+         if Expr then Expr else Expr --
+         Expr Expr                   -- Function application
+
+CaseBranche ::= PExpr -> Expr
+
+PExpr ::= ID
+        | INT
+        | STRING
+        | true
+        | false
+        | ()
+        | ( [PExpr ,]* PExpr )
+        | []
+        | PExpr : PExpr
+
+
+Regular expressions for terminals:
+TYPE =~ [A-Z][A-Za-z0-9_]
+ID =~ [a-z_][A-Za-z0-9_]
+INT =~ [+-]?[0-9]+
