@@ -1,0 +1,11 @@
+{* This is a multiline
+   {* nested *} comment *}
+
+-- This is a single line comment
+
+foo (Int -> Int -> Bool) is
+    foo 0 0 = false
+and foo 1 1 = true
+and foo a b = a < b
+
+-10
