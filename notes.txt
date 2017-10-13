@@ -53,6 +53,7 @@ Expr ::= ID                          -- Variable reference
          case Expr of [CaseBranch]+  --
          if Expr then Expr else Expr --
          Expr Expr                   -- Function application
+         TYPE [ID]*                  -- Constructor
 
 CaseBranche ::= PExpr -> Expr
 
