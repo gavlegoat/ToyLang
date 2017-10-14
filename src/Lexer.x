@@ -22,6 +22,7 @@ tokens :-
 <0>        ")"       { \_ _ -> mkPlainToken TRParen }
 <0>        "is"      { \_ _ -> mkPlainToken TIs }
 <0>        "and"     { \_ _ -> mkPlainToken TFunAnd }
+<0>        "|"       { \_ _ -> mkPlainToken TBar }
 <0>        @type     { \_ s -> mkPlainToken $ TType s }
 <0>        "=>"      { \_ _ -> mkPlainToken TDoubleArrow }
 <0>        "="       { \_ _ -> mkPlainToken TEquals }
@@ -44,6 +45,7 @@ tokens :-
 <0>        "&&"      { \_ _ -> mkPlainToken TAnd }
 <0>        "||"      { \_ _ -> mkPlainToken TOr }
 <0>        "not"     { \_ _ -> mkPlainToken TNot }
+<0>        ","       { \_ _ -> mkPlainToken TComma }
 <0>        ":"       { \_ _ -> mkPlainToken TColon }
 <0>        "["       { \_ _ -> mkPlainToken TLSquare }
 <0>        "]"       { \_ _ -> mkPlainToken TRSquare }
@@ -63,6 +65,7 @@ data TokenType = TId String
                | TRParen
                | TIs
                | TFunAnd  -- and
+               | TBar  -- |
                | TType String
                | TDoubleArrow  -- =>
                | TEquals  -- =
@@ -81,6 +84,7 @@ data TokenType = TId String
                | TAnd  -- &&
                | TOr
                | TNot
+               | TComma
                | TColon
                | TLSquare
                | TRSquare
