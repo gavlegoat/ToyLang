@@ -53,7 +53,7 @@ Expr ::= ID                          -- Variable reference
          case Expr of [CaseBranch]+  --
          if Expr then Expr else Expr --
          Expr Expr                   -- Function application
-         TYPE [ID]*                  -- Constructor
+         TYPE [Expr]*                -- Constructor
 
 CaseBranche ::= PExpr -> Expr
 
@@ -62,10 +62,11 @@ PExpr ::= ID
         | STRING
         | true
         | false
-        | ()
+        | ( )
         | ( [PExpr ,]* PExpr )
-        | []
+        | [ ]
         | PExpr : PExpr
+        | Type [PExpr]   -- Constructor matching
 
 
 Regular expressions for terminals:

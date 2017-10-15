@@ -17,7 +17,6 @@ tokens :-
 <0,comSC>  "{*"      { beginComment }
 <comSC>    "*}"      { endComment }
 <comSC>    [.\n]     ;
-<0>        @id       { \_ s -> mkPlainToken $ TId s }
 <0>        "("       { \_ _ -> mkPlainToken TLParen }
 <0>        ")"       { \_ _ -> mkPlainToken TRParen }
 <0>        "is"      { \_ _ -> mkPlainToken TIs }
@@ -57,6 +56,7 @@ tokens :-
 <0>        "then"    { \_ _ -> mkPlainToken TThen }
 <0>        "else"    { \_ _ -> mkPlainToken TElse }
 <0>        "->"      { \_ _ -> mkPlainToken TSingleArrow }
+<0>        @id       { \_ s -> mkPlainToken $ TId s }
 
 {
 

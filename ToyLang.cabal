@@ -15,8 +15,8 @@ cabal-version:        >=1.10
 
 executable ToyLang
   main-is:              Main.hs
-  build-tools:          alex
-  other-modules:        Lexer
+  build-tools:          alex, happy
+  other-modules:        Lexer, Parser, Types
   -- other-extensions:
   build-depends:        base >= 4.7 && < 5, mtl >= 2.2 && < 3, array >= 0.5 && < 1,
                         utf8-string >= 1.0 && < 2
