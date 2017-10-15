@@ -12,7 +12,7 @@ data PExpr =
   | PTuple [PExpr]
   | PEmptyList
   | PCons PExpr PExpr
-  | PConstructor [PExpr]
+  | PConstructor String [PExpr]
   deriving (Show)
 
 data ExprF a =

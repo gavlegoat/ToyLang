@@ -23,39 +23,39 @@ Function ::= ID ( FunType ) is [FunDef and]* FunDef
 
 FunType ::= [TYPE =>]* TYPE
 
-FunDef ::= ID [PExpr]* = Expr
+FunDef ::= ID [PExpr]* = Expr ;
 
 Datatype ::= data TYPE = [Constructor |]* Constructor
 
 Constructor ::= TYPE [TYPE]*
 
 Expr ::= ID                          -- Variable reference
-         INT                         -- Integer literal
-         STRING                      -- String literal
-         true                        -- Boolean literal true
-         false                       -- Boolean literal false
-         Expr + Expr                 -- Arithmetic Expressions
-         Expr - Expr                 --
-         Expr * Expr                 --
-         Expr / Expr                 --
-         ~ Expr                      -- Arithmetic negation
-         Expr < Expr                 -- Comparison operators
-         Expr == Expr                --
-         Expr <= Expr                --
-         Expr && Expr                -- Boolean expressions
-         Expr || Expr                --
-         not Expr                    --
-         ([Expr ,]* Expr)            -- Tuple construction
-         ( )                         -- Unit value
-         Expr : Expr                 -- List construction
-         [ ]                         -- Empty list
-         let ID = Expr in Expr       --
-         case Expr of [CaseBranch]+  --
-         if Expr then Expr else Expr --
-         Expr Expr                   -- Function application
-         TYPE [Expr]*                -- Constructor
+       |  INT                         -- Integer literal
+       |  STRING                      -- String literal
+       |  true                        -- Boolean literal true
+       |  false                       -- Boolean literal false
+       |  Expr + Expr                 -- Arithmetic Expressions
+       |  Expr - Expr                 --
+       |  Expr * Expr                 --
+       |  Expr / Expr                 --
+       |  ~ Expr                      -- Arithmetic negation
+       |  Expr < Expr                 -- Comparison operators
+       |  Expr == Expr                --
+       |  Expr <= Expr                --
+       |  Expr && Expr                -- Boolean expressions
+       |  Expr || Expr                --
+       |  not Expr                    --
+       |  ([Expr ,]* Expr)            -- Tuple construction
+       |  ( )                         -- Unit value
+       |  Expr : Expr                 -- List construction
+       |  [ ]                         -- Empty list
+       |  let ID = Expr in Expr       --
+       |  case Expr of [CaseBranch ;]+  --
+       |  if Expr then Expr else Expr --
+       |  Expr Expr                   -- Function application
+       |  TYPE [Expr]*                -- Constructor
 
-CaseBranche ::= PExpr -> Expr
+CaseBranch ::= PExpr -> Expr
 
 PExpr ::= ID
         | INT

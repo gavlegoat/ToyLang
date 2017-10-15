@@ -15,6 +15,7 @@ import Types
 
 %token
 
+';'      { Token TSemi _ }
 '('      { Token TLParen _ }
 ')'      { Token TRParen _ }
 is       { Token TIs _ }
@@ -69,8 +70,8 @@ Program :: { PosAST }
          : DeclList   { AST $1 }
 
 DeclList :: { [PosDeclaration] }
-          : Declaration            { [$1] }
-          | DeclList Declaration   { $2 : $1 }
+          : Declaration ';'            { [$1] }
+          | DeclList Declaration ';'   { $2 : $1 }
 
 Declaration :: { PosDeclaration }
              : Function   { FunDecl $1 }
@@ -93,7 +94,7 @@ FunDef :: { ([PExpr], PosExpr) }
         : id PExprList '=' Expr   { ($2, $4) }
 
 PExprList :: { [PExpr] }
-           : PExpr             { [$1] }
+           : {- empty -}       { [] }
            | PExprList PExpr   { $1 ++ [$2] }
 
 PExpr :: { PExpr }
@@ -116,7 +117,12 @@ PExpr :: { PExpr }
        | '(' PExprCommaList ')'   { PTuple $2 }
        | '[' ']'                  { PEmptyList }
        | PExpr ':' PExpr          { PCons $1 $3 }
-       | type PExprList           { PConstructor $2 }
+       | type                     { case unTok $1 of
+                                      TType s -> PConstructor s []
+                                      _ -> error "Parse error: bad constructor" }
+       | '(' type PExprList ')'   { case unTok $2 of
+                                      TType s -> PConstructor s $3
+                                      _ -> error "Parse error: bad constructor" }
 
 PExprCommaList :: { [PExpr] }
                 : PExpr                      { [$1] }
@@ -139,9 +145,9 @@ Expr :: { PosExpr }
                      TBool False -> AnnFix (lineno $1, CBool False)
                      _ -> error "Parse error: bad false" }
       | Expr '+' Expr           { AnnFix (lineno $2, Add $1 $3) }
-      | Expr '-' Expr           { AnnFix (lineno $2, Add $1 $3) }
-      | Expr '*' Expr           { AnnFix (lineno $2, Add $1 $3) }
-      | Expr '/' Expr           { AnnFix (lineno $2, Add $1 $3) }
+      | Expr '-' Expr           { AnnFix (lineno $2, Sub $1 $3) }
+      | Expr '*' Expr           { AnnFix (lineno $2, Mul $1 $3) }
+      | Expr '/' Expr           { AnnFix (lineno $2, Div $1 $3) }
       | '~' Expr                { AnnFix (lineno $1, Neg $2) }
       | Expr '<' Expr           { AnnFix (lineno $2, Lt $1 $3) }
       | Expr '==' Expr          { AnnFix (lineno $2, Eq $1 $3) }
@@ -173,8 +179,8 @@ ExprCommaList :: { [PosExpr] }
                | ExprCommaList ',' Expr   { $1 ++ [$3] }
 
 CaseList :: { [(PExpr, PosExpr)] }
-          : CaseBranch            { [$1] }
-          | CaseList CaseBranch   { $1 ++ [$2] }
+          : CaseBranch ';'           { [$1] }
+          | CaseList CaseBranch ';'  { $1 ++ [$2] }
 
 CaseBranch :: { (PExpr, PosExpr) }
             : PExpr '->' Expr   { ($1, $3) }

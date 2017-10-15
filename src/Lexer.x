@@ -14,6 +14,7 @@ import Codec.Binary.UTF8.String (encode)
 tokens :-
 <0>        $white+   ;
 <0>        "--".*$   ;
+<0>        ";"       { \_ _ -> mkPlainToken TSemi }
 <0,comSC>  "{*"      { beginComment }
 <comSC>    "*}"      { endComment }
 <comSC>    [.\n]     ;
@@ -28,9 +29,9 @@ tokens :-
 <0>        "data"    { \_ _ -> mkPlainToken TData }
 <0>        @int      { \_ s -> mkPlainToken $ TInt (read s) }
 <0>        \"        { beginString }
-<strSC>    \"        { endString }
-<strSC>    \.        { appendString }
 <strSC>    \\[nt\"]  { escapeString }
+<strSC>    \"        { endString }
+<strSC>    .         { appendString }
 <0>        "true"    { \_ _ -> mkPlainToken $ TBool True }
 <0>        "false"   { \_ _ -> mkPlainToken $ TBool False }
 <0>        "+"       { \_ _ -> mkPlainToken TAdd }
@@ -61,6 +62,7 @@ tokens :-
 {
 
 data TokenType = TId String
+               | TSemi
                | TLParen
                | TRParen
                | TIs
@@ -183,8 +185,9 @@ escapeString _ (_ : c : _) = do
 endString :: LexAction
 endString _ _ = do
   s <- get
+  let buf = strBuf s
   put s { lexSC = 0, strBuf = "" }
-  mkPlainToken (TString . reverse $ strBuf s)
+  mkPlainToken (TString $ reverse buf)
 
 beginComment :: LexAction
 beginComment _ _ = do
@@ -207,7 +210,7 @@ readToken = do
     AlexEOF -> if (lexSC s) == comSC then error "Lexer: End of file in comment"
                else if (lexSC s) == strSC then error "Lexer: End of file in string"
                else return (Token TEOF 0)
-    AlexError inp' -> error $ "Lexical error on line " ++ (show $ ailineno inp')
+    AlexError inp' -> error $ [aiprev inp'] -- "Lexical error on line " ++ (show $ ailineno inp')
     AlexSkip inp' _ -> do
       put s { input = inp' }
       readToken
