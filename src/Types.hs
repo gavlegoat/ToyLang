@@ -71,6 +71,9 @@ instance Functor ExprF where
 -- A functions type may either be a single type or a function which takes
 -- one argument and returns a result (functions are curried)
 data Type = BaseType String
+          | ListType Type
+          | UnitType
+          | TupleType [Type]
           | FunctionType Type Type
           deriving (Show)
 
@@ -106,13 +109,17 @@ showExpr expr = case expr of
   App a b         -> "App " ++ show a ++ " " ++ show b
   Constructor s l -> "Constructor " ++ show s ++ " " ++ show l
 
--- A function consists of a name, a type, and a definition, which is a number
--- of clauses, each guarded by a pattern match obstruction.
-data Function a = Function  { funName :: String
-                            , funType :: Type
-                            , funDef :: [([PExpr], AnnFix a ExprF)]
-                            , funLine :: Int }
-                            deriving (Show)
+-- The declaration is the type signature for a function
+data FunDecl = FunDecl { funDeclName :: String
+                       , funType :: Type
+                       , funDeclLine :: Int}
+                       deriving (Show)
+
+-- The definition includes a list of expressions to pattern match on and the namd
+data FunDef a = FunDef { funDefName :: String
+                     , funDef :: ([PExpr], AnnFix a ExprF)
+                     , funDefLine :: Int }
+                     deriving (Show)
 
 -- A datatype has a name and a number of constructors, each of which has a
 -- name and a number of fields
@@ -121,14 +128,19 @@ data Datatype = Datatype { typeName :: String
                          , typeLine :: Int }
                          deriving (Show)
 
-data Declaration a = FunDecl (Function a)
-                   | TypeDecl Datatype
+data Declaration a = DFunDecl FunDecl
+                   | DFunDef (FunDef a)
+                   | DTypeDef Datatype
                    deriving (Show)
 
 newtype AST a = AST [Declaration a]
   deriving (Show)
 
 type PosExpr = AnnFix Int ExprF
-type PosFunction = Function Int
+
+exprLine :: PosExpr -> Int
+exprLine (AnnFix (l, _)) = l
+
+type PosFunDef = FunDef Int
 type PosDeclaration = Declaration Int
 type PosAST = AST Int

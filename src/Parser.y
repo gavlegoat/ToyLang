@@ -16,15 +16,13 @@ import Types
 %token
 
 ';'      { Token TSemi _ }
+'::'     { Token TDoubleColon _ }
 '('      { Token TLParen _ }
 ')'      { Token TRParen _ }
-is       { Token TIs _ }
-and      { Token TFunAnd _ }
 '->'     { Token TSingleArrow _ }
 id       { Token (TId _) _ }
 '='      { Token TEquals _ }
 '|'      { Token TBar _ }
-'=>'     { Token TDoubleArrow _ }
 type     { Token (TType _) _ }
 data     { Token TData _ }
 int      { Token (TInt _) _ }
@@ -60,6 +58,7 @@ else     { Token TElse _ }
 %left '||'
 %right not
 %nonassoc '<' '==' '<='
+%right ':'
 %left '+' '-'
 %left '*' '/'
 %left '.'
@@ -75,25 +74,35 @@ DeclList :: { [PosDeclaration] }
           | DeclList Declaration ';'   { $2 : $1 }
 
 Declaration :: { PosDeclaration }
-             : Function   { FunDecl $1 }
-             | Datatype   { TypeDecl $1 }
+             : FunDecl    { DFunDecl $1 }
+             | FunDef     { DFunDef $1 }
+             | Datatype   { DTypeDef $1 }
 
-Function :: { PosFunction }
-          : id '(' FunType ')' is FunDefList   { mkFunction $1 $3 $6 }
+FunDecl :: { FunDecl }
+         : id '::' Type   { case unTok $1 of
+                              TId n -> FunDecl { funDeclName = n
+                                               , funType = $3
+                                               , funDeclLine = lineno $1 } }
 
-FunType :: { Type }
-         : type                   { case unTok $1 of
-                                      TType s -> BaseType s
-                                      _ -> error "Parse error: bad type"}
-         | FunType '=>' FunType   { FunctionType $1 $3 }
-         | '(' FunType ')'        { $2 }
+Type :: { Type }
+      : type                    { case unTok $1 of
+                                    TType s -> BaseType s
+                                    _ -> error "Parser error: bad type" }
+      | '[' Type ']'            { ListType $2 }
+      | '(' ')'                 { UnitType }
+      | '(' Type ')'            { $2 }
+      | '(' TypeCommaList ')'   { TupleType $2 }
+      | Type '->' Type          { FunctionType $1 $3 }
 
-FunDefList :: { [([PExpr], PosExpr)] }
-            : FunDef                  { [$1] }
-            | FunDefList and FunDef   { $1 ++ [$3] }
+TypeCommaList :: { [Type] }
+               : Type ',' Type            { [$1, $3] }
+               | TypeCommaList ',' Type   { $1 ++ [$3] }
 
-FunDef :: { ([PExpr], PosExpr) }
-        : id PExprList '=' Expr   { ($2, $4) }
+FunDef :: { PosFunDef }
+        : id PExprList '=' Expr { case unTok $1 of
+                                    TId n -> FunDef { funDefName = n
+                                                    , funDef = ($2, $4)
+                                                    , funDefLine = lineno $1 } }
 
 PExprList :: { [PExpr] }
            : {- empty -}       { [] }
@@ -158,6 +167,7 @@ Expr :: { PosExpr }
       | Expr '||' Expr          { AnnFix (lineno $2, Or $1 $3) }
       | not Expr                { AnnFix (lineno $1, Not $2) }
       | Expr '.' Expr           { AnnFix (lineno $2, App $1 $3) }
+      | Application             { $1 }
       | '(' ExprCommaList ')'   { AnnFix (lineno $1, Tuple $2) }
       | '(' Expr ')'            { $2 }
       | '(' ')'                 { AnnFix (lineno $1, Unit) }
@@ -174,6 +184,31 @@ Expr :: { PosExpr }
                                   case unTok $1 of
                                     TType s -> Constructor s $2
                                     _ -> error "Parse error: bad constructor") }
+
+Application :: { PosExpr }
+             : AExpr                { $1 }
+             | Application AExpr    { AnnFix (exprLine $1, App $1 $2) }
+
+AExpr :: { PosExpr }
+      : id       { case unTok $1 of
+                     TId s -> AnnFix (lineno $1, Id s)
+                     _ -> error "Parse error: bad id" }
+      | int      { case unTok $1 of
+                     TInt i -> AnnFix (lineno $1, CInt i)
+                     _ -> error "Parse error: bad int" }
+      | string   { case unTok $1 of
+                     TString s -> AnnFix (lineno $1, CString s)
+                     _ -> error "Parse error: bad string" }
+      | true     { case unTok $1 of
+                     TBool True -> AnnFix (lineno $1, CBool True)
+                     _ -> error "Parse error: bad true" }
+      | false    { case unTok $1 of
+                     TBool False -> AnnFix (lineno $1, CBool False)
+                     _ -> error "Parse error: bad false" }
+       | '(' ')'                 { AnnFix (lineno $1, Unit) }
+       | '(' Expr ')'            { $2 }
+       | '(' ExprCommaList ')'   { AnnFix (lineno $1, Tuple $2) }
+       | '[' ']'                 { AnnFix (lineno $1, EmptyList) }
 
 ExprCommaList :: { [PosExpr] }
                : Expr ',' Expr            { [$1, $3] }
@@ -208,18 +243,10 @@ Constructor :: { (String, [Type]) }
                                  _ -> error "Parse error: bad type list" }
 
 TypeList :: { [Type] }
-          : {- empty -}        { [] }
-          | TypeList FunType   { $1 ++ [$2] }
+          : {- empty -}     { [] }
+          | TypeList Type   { $1 ++ [$2] }
 
 {
-
-mkFunction :: Token -> Type -> [([PExpr], PosExpr)] -> PosFunction
-mkFunction (Token (TId name) line) t body =
-  Function { funName = name
-           , funType = t
-           , funDef = body
-           , funLine = line }
-mkFunction _ _ _ = error "Parse error: bad function declaration"
 
 mkPExpr :: Token -> PExpr
 mkPExpr (Token (TId s)     _) = PId s

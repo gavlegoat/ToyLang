@@ -10,8 +10,8 @@ main = do
   args <- getArgs
   str <- readFile (head args)
   putStrLn . show $ parse str
-  --putStrLn . show $ alexTokens str
-
+--   putStrLn . show $ alexTokens str
+--
 -- alexTokens :: String -> [Token]
 -- alexTokens = evalP test
 --

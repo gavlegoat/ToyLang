@@ -1,64 +1,17 @@
-{* This is a multiline
-   {* nested *} comment *}
+{- This is a
+   {- nested -} multiline comment with "strings" -}
 
 -- This is a single line comment
 
-foo (Int => Int => Bool) is
-    foo 0 0 = false
-and foo 1 1 = true
-and foo a b = a < "test";
+foo :: Int -> Int -> Int;
+foo a b = a + b * c;
+foo a b = a * b + c;
+foo a b = ~a * b;
+foo f b = f b c;
 
-arith (Int => Int => Int) is
-    arith 1 2 = a + 1
-and arith 2 3 = a - 2
-and arith 3 4 = a * 3
-and arith 4 5 = a / 4
-and arith 5 6 = ~a;
+tuple :: (Int -> String) -> Int -> (Int, String);
+tuple f a = (a, f a);
 
-comp (Int => Int => Bool) is
-    comp 0 0 = a < b
-and comp 1 1 = a <= b
-and comp 2 2 = a == b;
+list :: Int -> [(Int, ())];
+list a = (a, ()) : [];
 
-const (A => A) is
-    const (A 1 2) = "test"
-and const (A a b) = "String";
-
-bool (Bool => Bool => Bool) is
-    bool False True = a && b
-and bool True False = a || b
-and bool True True  = not a;
-
-tuple (A => A) is
-    tuple (a, 2) = (b, c);
-
-unit (A) is
-    unit = ();
-
-cons (A => ListA) is
-    cons a as = a : [];
-
-letTest (A => B) is
-    letTest x = let a = "test" in "string";
-
-caseTest (A => B) is
-    caseTest = case "string" of
-      () -> "unit";
-      (a, b) -> "tuple";
-      2 -> "int";;
-
-ifTest (A => B) is
-    ifTest a b = if a == b then "test" else false;
-
-app (A => B) is
-    app a = f . a;
-
-constructor (A => B) is
-    constructor a = Constructor a;
-
-precedence (A => B) is
-    precedence a = a + b * c;
-
-grouping ((A => B) => B) is
-    grouping f = (a + b) * c
-and grouping g = a . b . c;

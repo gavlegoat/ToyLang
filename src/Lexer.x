@@ -14,17 +14,15 @@ import Codec.Binary.UTF8.String (encode)
 tokens :-
 <0>        $white+   ;
 <0>        "--".*$   ;
+<0>        "::"      { \_ _ -> mkPlainToken TDoubleColon }
 <0>        ";"       { \_ _ -> mkPlainToken TSemi }
-<0,comSC>  "{*"      { beginComment }
-<comSC>    "*}"      { endComment }
+<0,comSC>  "{-"      { beginComment }
+<comSC>    "-}"      { endComment }
 <comSC>    [.\n]     ;
 <0>        "("       { \_ _ -> mkPlainToken TLParen }
 <0>        ")"       { \_ _ -> mkPlainToken TRParen }
-<0>        "is"      { \_ _ -> mkPlainToken TIs }
-<0>        "and"     { \_ _ -> mkPlainToken TFunAnd }
 <0>        "|"       { \_ _ -> mkPlainToken TBar }
 <0>        @type     { \_ s -> mkPlainToken $ TType s }
-<0>        "=>"      { \_ _ -> mkPlainToken TDoubleArrow }
 <0>        "="       { \_ _ -> mkPlainToken TEquals }
 <0>        "data"    { \_ _ -> mkPlainToken TData }
 <0>        @int      { \_ s -> mkPlainToken $ TInt (read s) }
@@ -57,20 +55,18 @@ tokens :-
 <0>        "then"    { \_ _ -> mkPlainToken TThen }
 <0>        "else"    { \_ _ -> mkPlainToken TElse }
 <0>        "->"      { \_ _ -> mkPlainToken TSingleArrow }
-<0>        \.        { \_ _ -> mkPlainToken TDot }
+<0>        "."       { \_ _ -> mkPlainToken TDot }
 <0>        @id       { \_ s -> mkPlainToken $ TId s }
 
 {
 
 data TokenType = TId String
                | TSemi
+               | TDoubleColon
                | TLParen
                | TRParen
-               | TIs
-               | TFunAnd  -- and
                | TBar  -- |
                | TType String
-               | TDoubleArrow  -- =>
                | TEquals  -- =
                | TData
                | TInt Int
