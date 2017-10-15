@@ -53,15 +53,16 @@ of       { Token TOf _ }
 if       { Token TIf _ }
 then     { Token TThen _ }
 else     { Token TElse _ }
+'.'      { Token TDot _ }
 
-%left '->'
-%left APP
+%right '=>'
 %left '&&'
 %left '||'
 %right not
 %nonassoc '<' '==' '<='
 %left '+' '-'
 %left '*' '/'
+%left '.'
 %right '~'
 
 %%
@@ -85,6 +86,7 @@ FunType :: { Type }
                                       TType s -> BaseType s
                                       _ -> error "Parse error: bad type"}
          | FunType '=>' FunType   { FunctionType $1 $3 }
+         | '(' FunType ')'        { $2 }
 
 FunDefList :: { [([PExpr], PosExpr)] }
             : FunDef                  { [$1] }
@@ -154,8 +156,10 @@ Expr :: { PosExpr }
       | Expr '<=' Expr          { AnnFix (lineno $2, Le $1 $3) }
       | Expr '&&' Expr          { AnnFix (lineno $2, And $1 $3) }
       | Expr '||' Expr          { AnnFix (lineno $2, Or $1 $3) }
-      | not Expr              { AnnFix (lineno $1, Not $2) }
+      | not Expr                { AnnFix (lineno $1, Not $2) }
+      | Expr '.' Expr           { AnnFix (lineno $2, App $1 $3) }
       | '(' ExprCommaList ')'   { AnnFix (lineno $1, Tuple $2) }
+      | '(' Expr ')'            { $2 }
       | '(' ')'                 { AnnFix (lineno $1, Unit) }
       | Expr ':' Expr           { AnnFix (lineno $2, Cons $1 $3) }
       | '[' ']'                 { AnnFix (lineno $1, EmptyList) }
@@ -166,16 +170,13 @@ Expr :: { PosExpr }
       | case Expr of CaseList   { AnnFix (lineno $1, Case $2 $4) }
       | if Expr then Expr else Expr { AnnFix (lineno $1,
                                               If $2 $4 $6) }
-      | Expr Expr %prec APP   { case $1 of
-                                  AnnFix (l, _) ->
-                                    AnnFix (l, App $1 $2) }
       | type ExprList   { AnnFix (lineno $1,
                                   case unTok $1 of
                                     TType s -> Constructor s $2
                                     _ -> error "Parse error: bad constructor") }
 
 ExprCommaList :: { [PosExpr] }
-               : Expr                     { [$1] }
+               : Expr ',' Expr            { [$1, $3] }
                | ExprCommaList ',' Expr   { $1 ++ [$3] }
 
 CaseList :: { [(PExpr, PosExpr)] }

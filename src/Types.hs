@@ -74,7 +74,7 @@ data Type = BaseType String
           | FunctionType Type Type
           deriving (Show)
 
-newtype AnnFix x f = AnnFix { unAnnFux :: (x, f (AnnFix x f)) }
+newtype AnnFix x f = AnnFix { unAnnFix :: (x, f (AnnFix x f)) }
 
 instance (Show a) => Show (AnnFix a ExprF) where
   show (AnnFix (x, expr)) = "(" ++ show x ++ ": " ++ showExpr expr ++ ")"

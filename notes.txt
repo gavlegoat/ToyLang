@@ -6,9 +6,9 @@ because I want to make sure whitespace is unimportant. A function might look
 like:
 
 >>> foo (Int -> Int -> Bool) is
->>> foo 0 0 = false and
->>> foo 1 1 = true and
->>> foo a b = a < b
+>>>     foo 0 0 = false
+>>> and foo 1 1 = true
+>>> and foo a b = a < b:
 
 Also note that comments are haskell style, i.e., they may be -- to \n or they
 may be {* to *}. Functions are curried so function application always occurs
@@ -30,30 +30,31 @@ Datatype ::= data TYPE = [Constructor |]* Constructor
 Constructor ::= TYPE [TYPE]*
 
 Expr ::= ID                          -- Variable reference
-       |  INT                         -- Integer literal
-       |  STRING                      -- String literal
-       |  true                        -- Boolean literal true
-       |  false                       -- Boolean literal false
-       |  Expr + Expr                 -- Arithmetic Expressions
-       |  Expr - Expr                 --
-       |  Expr * Expr                 --
-       |  Expr / Expr                 --
-       |  ~ Expr                      -- Arithmetic negation
-       |  Expr < Expr                 -- Comparison operators
-       |  Expr == Expr                --
-       |  Expr <= Expr                --
-       |  Expr && Expr                -- Boolean expressions
-       |  Expr || Expr                --
-       |  not Expr                    --
-       |  ([Expr ,]* Expr)            -- Tuple construction
-       |  ( )                         -- Unit value
-       |  Expr : Expr                 -- List construction
-       |  [ ]                         -- Empty list
-       |  let ID = Expr in Expr       --
-       |  case Expr of [CaseBranch ;]+  --
-       |  if Expr then Expr else Expr --
-       |  Expr Expr                   -- Function application
-       |  TYPE [Expr]*                -- Constructor
+       | INT                         -- Integer literal
+       | STRING                      -- String literal
+       | true                        -- Boolean literal true
+       | false                       -- Boolean literal false
+       | Expr + Expr                 -- Arithmetic Expressions
+       | Expr - Expr                 --
+       | Expr * Expr                 --
+       | Expr / Expr                 --
+       | ~ Expr                      -- Arithmetic negation
+       | Expr < Expr                 -- Comparison operators
+       | Expr == Expr                --
+       | Expr <= Expr                --
+       | Expr && Expr                -- Boolean expressions
+       | Expr || Expr                --
+       | not Expr                    --
+       | ( Expr )                    -- Grouping
+       | ( Expr , [Expr ,]* Expr )   -- Tuple construction
+       | ( )                         -- Unit value
+       | Expr : Expr                 -- List construction
+       | [ ]                         -- Empty list
+       | let ID = Expr in Expr       --
+       | case Expr of [CaseBranch ;]+  --
+       | if Expr then Expr else Expr --
+       | Expr . Expr                 -- Function application
+       | TYPE [Expr]*                -- Constructor
 
 CaseBranch ::= PExpr -> Expr
 
@@ -73,3 +74,23 @@ Regular expressions for terminals:
 TYPE =~ [A-Z][A-Za-z0-9_]
 ID =~ [a-z_][A-Za-z0-9_]
 INT =~ [+-]?[0-9]+
+
+
+Semantic stuff:
+'print' is a built-in function taking any type and returning (), so printing
+can be done by 'let <garbage> = print <value> in <expr>'.
+
+Built-in types:
+- String
+- Int
+- Bool
+
+Some semantic checks:
+- there is a main method
+- within each declaration, the function names all match (we shouldn't have
+    something like 'foo (A => B) is bar a b = ...;'
+- No two declarations should have the same name
+- Look for undefined types in function signatures and definitions
+- Matching should not bind the same name more than once (we shouldn't have
+    something like foo (A => A => B) is foo a a = ...;'
+- Check for cyclic datatype definitions

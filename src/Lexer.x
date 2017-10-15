@@ -57,6 +57,7 @@ tokens :-
 <0>        "then"    { \_ _ -> mkPlainToken TThen }
 <0>        "else"    { \_ _ -> mkPlainToken TElse }
 <0>        "->"      { \_ _ -> mkPlainToken TSingleArrow }
+<0>        \.        { \_ _ -> mkPlainToken TDot }
 <0>        @id       { \_ s -> mkPlainToken $ TId s }
 
 {
@@ -98,6 +99,7 @@ data TokenType = TId String
                | TThen
                | TElse
                | TSingleArrow  -- ->
+               | TDot
                | TEOF
   deriving (Eq, Show)
 

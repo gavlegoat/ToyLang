@@ -51,9 +51,14 @@ ifTest (A => B) is
     ifTest a b = if a == b then "test" else false;
 
 app (A => B) is
-    app a = f a;
+    app a = f . a;
 
 constructor (A => B) is
     constructor a = Constructor a;
 
+precedence (A => B) is
+    precedence a = a + b * c;
 
+grouping ((A => B) => B) is
+    grouping f = (a + b) * c
+and grouping g = a . b . c;
