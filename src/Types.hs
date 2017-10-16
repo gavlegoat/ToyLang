@@ -40,7 +40,7 @@ data ExprF a =
   | If a a a
   | App a a
   | Constructor String [a]
-  | Internal
+  | Internal String
   deriving (Show)
 
 instance Functor ExprF where
@@ -68,7 +68,7 @@ instance Functor ExprF where
   fmap f (If a b c) = If (f a) (f b) (f c)
   fmap f (App a b) = App (f a) (f b)
   fmap f (Constructor s l) = Constructor s (map f l)
-  fmap f (Internal) = Internal
+  fmap f (Internal s) = Internal s
 
 -- A functions type may either be a single type or a function which takes
 -- one argument and returns a result (functions are curried)
@@ -110,7 +110,7 @@ showExpr expr = case expr of
   If i t e        -> "If " ++ show i ++ " " ++ show t ++ " " ++ show e
   App a b         -> "App " ++ show a ++ " " ++ show b
   Constructor s l -> "Constructor " ++ show s ++ " " ++ show l
-  Internal        -> "Internal"
+  Internal s      -> "Internal " ++ s
 
 -- The declaration is the type signature for a function
 data FunDecl = FunDecl { funDeclName :: String
