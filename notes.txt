@@ -103,12 +103,18 @@ Built-in types:
 - Int
 - Bool
 
+Built-in functions:
+- concat
+- substr
+- length
+- error
+- printInt
+- printString
+- printBool
+
 Some semantic checks:
-- there is a main method
-- within each declaration, the function names all match (we shouldn't have
-    something like 'foo (A => B) is bar a b = ...;'
+- There is a main method
 - No two declarations should have the same name
 - Look for undefined types in function signatures and definitions
 - Matching should not bind the same name more than once (we shouldn't have
     something like foo (A => A => B) is foo a a = ...;'
-- Check for cyclic datatype definitions

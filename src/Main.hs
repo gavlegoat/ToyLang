@@ -4,20 +4,26 @@ import System.Environment
 
 import Lexer
 import Parser
+import Types
+import SemanticAnalysis
 
 main :: IO ()
 main = do
   args <- getArgs
   str <- readFile (head args)
-  putStrLn . show $ parse str
---   putStrLn . show $ alexTokens str
---
--- alexTokens :: String -> [Token]
--- alexTokens = evalP test
---
--- test :: P [Token]
--- test = do
---   token <- readToken
---   if (unTok token) == TEOF
---   then return [token]
---   else test >>= return . (token :)
+  let ast = parse str
+  let program = collectPieces ast
+  putStrLn . show $ semanticChecks program
+
+-- Parse: putStrLn . show $ parse str
+-- Lex:  putStrLn . show $ alexTokens str
+
+-- Lex: alexTokens :: String -> [Token]
+-- Lex: alexTokens = evalP test
+
+-- Lex: test :: P [Token]
+-- Lex: test = do
+-- Lex:   token <- readToken
+-- Lex:   if (unTok token) == TEOF
+-- Lex:   then return [token]
+-- Lex:   else test >>= return . (token :)

@@ -40,6 +40,7 @@ data ExprF a =
   | If a a a
   | App a a
   | Constructor String [a]
+  | Internal
   deriving (Show)
 
 instance Functor ExprF where
@@ -67,6 +68,7 @@ instance Functor ExprF where
   fmap f (If a b c) = If (f a) (f b) (f c)
   fmap f (App a b) = App (f a) (f b)
   fmap f (Constructor s l) = Constructor s (map f l)
+  fmap f (Internal) = Internal
 
 -- A functions type may either be a single type or a function which takes
 -- one argument and returns a result (functions are curried)
@@ -75,7 +77,7 @@ data Type = BaseType String
           | UnitType
           | TupleType [Type]
           | FunctionType Type Type
-          deriving (Show)
+          deriving (Eq, Show)
 
 newtype AnnFix x f = AnnFix { unAnnFix :: (x, f (AnnFix x f)) }
 
@@ -108,6 +110,7 @@ showExpr expr = case expr of
   If i t e        -> "If " ++ show i ++ " " ++ show t ++ " " ++ show e
   App a b         -> "App " ++ show a ++ " " ++ show b
   Constructor s l -> "Constructor " ++ show s ++ " " ++ show l
+  Internal        -> "Internal"
 
 -- The declaration is the type signature for a function
 data FunDecl = FunDecl { funDeclName :: String
@@ -117,9 +120,9 @@ data FunDecl = FunDecl { funDeclName :: String
 
 -- The definition includes a list of expressions to pattern match on and the namd
 data FunDef a = FunDef { funDefName :: String
-                     , funDef :: ([PExpr], AnnFix a ExprF)
-                     , funDefLine :: Int }
-                     deriving (Show)
+                       , funDef :: ([PExpr], AnnFix a ExprF)
+                       , funDefLine :: Int }
+                       deriving (Show)
 
 -- A datatype has a name and a number of constructors, each of which has a
 -- name and a number of fields
