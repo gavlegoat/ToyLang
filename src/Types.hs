@@ -148,6 +148,6 @@ type PosFunDef = FunDef Int
 type PosDeclaration = Declaration Int
 type PosAST = AST Int
 
-type TypeAnn = TypeAnn { typeAnnLine :: Int, typeAnnType :: Type }
+data TypeAnn = TypeAnn { typeAnnLine :: Int, typeAnnType :: Type }
 
 type TypeExpr = AnnFix TypeAnn ExprF

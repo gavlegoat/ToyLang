@@ -6,6 +6,7 @@ import Lexer
 import Parser
 import Types
 import SemanticAnalysis
+import Typecheck
 
 main :: IO ()
 main = do
