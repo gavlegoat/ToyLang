@@ -147,3 +147,7 @@ exprLine (AnnFix (l, _)) = l
 type PosFunDef = FunDef Int
 type PosDeclaration = Declaration Int
 type PosAST = AST Int
+
+type TypeAnn = TypeAnn { typeAnnLine :: Int, typeAnnType :: Type }
+
+type TypeExpr = AnnFix TypeAnn ExprF
