@@ -151,3 +151,6 @@ type PosAST = AST Int
 data TypeAnn = TypeAnn { typeAnnLine :: Int, typeAnnType :: Type }
 
 type TypeExpr = AnnFix TypeAnn ExprF
+
+exprType :: TypeExpr -> Type
+exprType (AnnFix (t, _)) = typeAnnType t
