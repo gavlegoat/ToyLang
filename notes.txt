@@ -107,7 +107,6 @@ Built-in functions:
 - concat
 - substr
 - length
-- error
 - printInt
 - printString
 - printBool

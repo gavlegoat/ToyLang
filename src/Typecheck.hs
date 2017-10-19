@@ -200,6 +200,47 @@ annotateExpr (AnnFix (l, e)) = case e of
   EmptyList -> return . Just $ AnnFix (TypeAnn l (ListType UnitType), EmptyList)
   Let s a b -> undefined
   Case a cs -> undefined
-  If i t e -> undefined
-  App a b -> undefined
+  If i t e -> do
+    m1 <- annotateExpr i
+    m2 <- annotateExpr t
+    m3 <- annotateExpr e
+    case (m1, m2, m3) of
+      (Just x, Just y, Just z) -> case exprType x of
+        BaseType "Bool" ->
+          if exprType y == exprType z
+          then return . Just $ AnnFix (TypeAnn l (exprType y), If x y z)
+          else do
+            st <- get
+            put $ st { typecheckErrors = Exception { errLine = l
+                                                   , errMsg = "Type mismatch in if branches" }
+                                         : typecheckErrors st }
+            return Nothing
+        _ -> do
+          st <- get
+          put $ st { typecheckErrors = Exception { errLine = l
+                                                 , errMsg = "If test is not boolean" }
+                                       : typecheckErrors st }
+          return Nothing
+      _ -> return Nothing
+  App a b -> do
+    m1 <- annotateExpr a
+    m2 <- annotateExpr b
+    case (m1, m2) of
+      (Just x, Just y) -> case exprType x of
+        FunctionType t1 t2 ->
+          if exprType y == t1
+          then return . Just $ AnnFix (TypeAnn l t2, App x y)
+          else do
+            st <- get
+            put $ st { typecheckErrors = Exception { errLine = l
+                                                   , errMsg = "Function applied to bad argument types" }
+                                         : typecheckErrors st }
+            return Nothing
+        _ -> do
+          st <- get
+          put $ st { typecheckErrors = Exception { errLine = l
+                                                 , errMsg = "Non-function applied to argument" }
+                                       : typecheckErrors st }
+          return Nothing
+      _ -> return Nothing
   Constructor s es -> undefined
