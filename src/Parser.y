@@ -169,7 +169,7 @@ Expr :: { PosExpr }
       | Expr '&&' Expr          { AnnFix (lineno $2, And $1 $3) }
       | Expr '||' Expr          { AnnFix (lineno $2, Or $1 $3) }
       | not Expr                { AnnFix (lineno $1, Not $2) }
-      | Expr '.' Expr           { AnnFix (lineno $2, App $1 $3) }
+      | Expr '.' Expr           { AnnFix (lineno $2, Compose $1 $3) }
       | Application             { $1 }
       | '(' ExprCommaList ')'   { AnnFix (lineno $1, Tuple $2) }
       | '(' Expr ')'            { $2 }

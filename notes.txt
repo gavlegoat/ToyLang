@@ -60,7 +60,6 @@ Expr ::= ID                            -- Variable reference
        | case Expr of [CaseBranch ;]+  --
        | if Expr then Expr else Expr   --
        | Application                   -- Function application
-       | TYPE [Expr]*                  -- Constructor
 
 Application ::= AExpr
               | Application AExpr
@@ -117,3 +116,35 @@ Some semantic checks:
 - Look for undefined types in function signatures and definitions
 - Matching should not bind the same name more than once (we shouldn't have
     something like foo (A => A => B) is foo a a = ...;'
+
+If I'm going to allow type variables (which I should) then I need to write
+some rules formally and redo the typechecker.
+
+We consider two type variables to be equal always for this purpose
+We assume there is an environment gamma. We define a typing function:
+T(id) = gamma(id)
+T(int) = 'Int'
+T(string) = 'String'
+T(bool) = 'Bool'
+T(e1 o e2) = if T(e1) = 'Int' && T(e2) = 'Int' then 'Int' else ERROR
+    for o = +,-,*,/
+T(~e1) = if T(e1) = 'Int' then 'Int' else ERROR
+T(e1 < e2) = if T(e1) = 'Int' && T(e2) = 'Int' then 'Bool' else ERROR
+T(e1 <= e2) = if T(e1) = 'Int' && T(e2) = 'Int' then 'Bool' else ERROR
+T(e1 == e2) = if T(e1) = T(e2) && <T(e1),T(e2) are base types> then 'Bool' else ERROR
+T(e1 && e2) = if T(e1) = 'Bool' && T(e2) = 'Bool' then 'Bool' else ERROR
+T(e1 || e2) = if T(e1) = 'Bool' && T(e2) = 'Bool' then 'Bool' else ERROR
+T(not e1) = if T(e1) = 'Bool' then 'Bool' else ERROR
+T(Expr . Expr) = T(e1) = t1 -> t2 && T(e2) = t3 -> t4 && t2 = t3 then t1 -> t4 else ERROR
+T((e1, ..., en)) = (T(e1), ..., T(en))
+T(()) = ()
+T(e1 : e2) = if <T(e2) is a list type over t1> && (e1 = t1 || <t1 is variable>) then [e1] else ERROR
+T([]) = [emptyListTypeVar]
+T(let x = e1 in e2) = if <e1 is well-typed> then T(e2) <with gamma(x)=T(e1)> else ERROR
+T(if e1 then e2 else e3) = if T(e1) = 'Bool' && T(e2) = T(e3) then T(e2) else ERROR
+T(e1 e2) = if <T(e1) is a function type>
+           then if <arg(T(e1)) is variable>
+                then ret(T(e1))[T(e2)/arg(T(e1))]
+                else if arg(T(e1)) = T(e2) then ret(T(e1)) else ERROR
+           else ERROR
+T(case e1 of branches) = TODO

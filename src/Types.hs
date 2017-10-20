@@ -37,6 +37,7 @@ data ExprF a =
   | Unit
   | Cons a a
   | EmptyList
+  | Compose a a
   | Let String a a
   | Case a [(PExpr, a)]
   | If a a a
@@ -64,6 +65,7 @@ instance Functor ExprF where
   fmap f Unit = Unit
   fmap f (Cons a b) = Cons (f a) (f b)
   fmap f EmptyList = EmptyList
+  fmap f (Compose a b) = Compose (f a) (f b)
   fmap f (Let s a b) = Let s (f a) (f b)
   fmap f (Case e bs) = Case (f e) (map (fst &&& (f.snd)) bs)
   fmap f (If a b c) = If (f a) (f b) (f c)
@@ -106,6 +108,7 @@ showExpr expr = case expr of
   Unit            -> "Unit"
   Cons a b        -> "Cons " ++ show a ++ " " ++ show b
   EmptyList       -> "EmptyList"
+  Compose a b     -> "Compose " ++ show a ++ " " ++ show b
   Let s a b       -> "Let " ++ s ++ " " ++ show a ++ " " ++ show b
   Case a cs       -> "Case " ++ show a ++ " " ++ show cs
   If i t e        -> "If " ++ show i ++ " " ++ show t ++ " " ++ show e

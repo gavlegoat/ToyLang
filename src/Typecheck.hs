@@ -13,8 +13,16 @@ data Exception = Exception { errLine :: Int, errMsg :: String }
 -- This is a state which will be carried through typechecking
 -- env should include both function and constructor declarations
 data TypecheckState = TypecheckState { env :: Map String Type
-                                     , funDefs :: Map String [PosFunDef]
                                      , typecheckErrors :: [Exception] }
+
+-- Replace all occurances of 'a' with 'b' in the type 't'
+substType :: Type -> Type -> Type -> Type
+substType t a b =
+  if t == a then b else case t of
+    ListType t' -> ListType (substType t' a b)
+    TupleType ts -> TupleType $ map (\x -> substType x a b) ts
+    FunctionType t1 t2 -> FunctionType (substType t1 a b) (substType t2 a b)
+    _ -> t
 
 -- Since +, -, *, /, <, <=, and, or are all very similar, we use this function
 -- to typecheck any of those operators
@@ -117,22 +125,36 @@ annotateExpr (AnnFix (l, e)) = case e of
     m1 <- annotateExpr a
     m2 <- annotateExpr b
     case (m1, m2) of
-      (Just x, Just y) ->
-        let t = exprType x
-        in if exprType y == ListType t
-           then return . Just $ AnnFix (TypeAnn l (ListType t), Cons x y)
-           else case y of
-             AnnFix (_, EmptyList) ->
-               return . Just $ AnnFix (TypeAnn l (ListType t), Cons x y)
-             _ -> do
-               st <- get
-               put $ st { typecheckErrors = Exception { errLine = l
-                                                      , errMsg = ": applied to wrong typese" }
-                                            : typecheckErrors st }
-               return Nothing
+      (Just x, Just y) -> case exprType y of
+        ListType y' -> case y' of
+          TypeVar _ -> return . Just $ AnnFix (TypeAnn l (ListType (exprType x)),
+                                               Cons x y)
+          _ -> if exprType x == y'
+               then return . Just $ AnnFix (TypeANn l (ListType y'), Cons x y)
+               else do
+                 st <- get
+                 put $ st { typecheckErrrors = Exception { errLine = l
+                                                         , errMsg = "Mismatched arguments to :" }
+                                               : typecheckErrors st }
+                 return Nothing
+        _ -> do
+          st <- get
+          put $ st { typecheckErrors = Exception { errLine = l
+                                                 , errMsg = "Second argument to : is not a list" }
+                                       : typecheckErrors st }
+          return Nothing
       _ -> return Nothing
-  EmptyList -> return . Just $ AnnFix (TypeAnn l (ListType UnitType), EmptyList)
-  Let s a b -> undefined
+  EmptyList -> return . Just $ AnnFix (TypeAnn l (ListType (TypeVar "emptyListType")), EmptyList)
+  Let s a b -> do
+    m1 <- annotateExpr a
+    case m1 of
+      Just x -> do
+        st <- get
+        oldEnv <- env st
+        put $ st { env = Map.insert s (exprType x) env }
+        m2 <- annotateExpr b
+        put $ st { env = oldEnv }
+        return m2
   Case a cs -> undefined
   If i t e -> do
     m1 <- annotateExpr i
@@ -140,15 +162,17 @@ annotateExpr (AnnFix (l, e)) = case e of
     m3 <- annotateExpr e
     case (m1, m2, m3) of
       (Just x, Just y, Just z) -> case exprType x of
-        BaseType "Bool" ->
-          if exprType y == exprType z
-          then return . Just $ AnnFix (TypeAnn l (exprType y), If x y z)
-          else do
-            st <- get
-            put $ st { typecheckErrors = Exception { errLine = l
-                                                   , errMsg = "Type mismatch in if branches" }
-                                         : typecheckErrors st }
-            return Nothing
+        BaseType "Bool" -> case (exprType y, exprType z) of
+          (TypeVar _, TypeVar _) -> return . Just $ AnnFix (TypeAnn l (exprType y), If x y z)
+          _ ->
+            if exprType y == exprType z
+            then return . Just $ AnnFix (TypeAnn l (exprType y), If x y z)
+            else do
+              st <- get
+              put $ st { typecheckErrors = Exception { errLine = l
+                                                     , errMsg = "Type mismatch in if branches" }
+                                           : typecheckErrors st }
+              return Nothing
         _ -> do
           st <- get
           put $ st { typecheckErrors = Exception { errLine = l
@@ -160,25 +184,16 @@ annotateExpr (AnnFix (l, e)) = case e of
     m1 <- annotateExpr a
     m2 <- annotateExpr b
     case (m1, m2) of
-      (Just x, Just y) -> case exprType x of
+      (Just x, Just y) -> case x of
         FunctionType t1 t2 -> case t1 of
-          TypeVar s -> undefined
-          _ ->
-            if exprType y == t1
-            then return . Just $ AnnFix (TypeAnn l t2, App x y)
-            else do
-              st <- get
-              put $ st { typecheckErrors = Exception { errLine = l
-                                                     , errMsg = "Function applied to bad argument types" }
-                                           : typecheckErrors st }
-              return Nothing
+          TypeVar s -> return . Just $ AnnFix (TypeAnn l (substType t2 t1 (exprType y)),
+                                               App x y)
         _ -> do
           st <- get
           put $ st { typecheckErrors = Exception { errLine = l
-                                                 , errMsg = "Non-function applied to argument" }
+                                                 , errMsg = "Non-function is applied to argument" }
                                        : typecheckErrors st }
           return Nothing
-      _ -> return Nothing
   Internal s -> case s of
     "concat" -> return . Just $ AnnFix (TypeAnn l (FunctionType
                                                      (BaseType "String")
