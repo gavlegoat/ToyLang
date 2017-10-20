@@ -38,8 +38,7 @@ data ExprF a =
   | Let String a a
   | Case a [(PExpr, a)]
   | If a a a
-  | App a a
-  | Constructor String [a]
+  | App a a    -- Includes constructor application
   | Internal String
   deriving (Show)
 
@@ -67,7 +66,6 @@ instance Functor ExprF where
   fmap f (Case e bs) = Case (f e) (zip (map fst bs) (map (f . snd) bs))
   fmap f (If a b c) = If (f a) (f b) (f c)
   fmap f (App a b) = App (f a) (f b)
-  fmap f (Constructor s l) = Constructor s (map f l)
   fmap f (Internal s) = Internal s
 
 -- A functions type may either be a single type or a function which takes
@@ -109,7 +107,6 @@ showExpr expr = case expr of
   Case a cs       -> "Case " ++ show a ++ " " ++ show cs
   If i t e        -> "If " ++ show i ++ " " ++ show t ++ " " ++ show e
   App a b         -> "App " ++ show a ++ " " ++ show b
-  Constructor s l -> "Constructor " ++ show s ++ " " ++ show l
   Internal s      -> "Internal " ++ s
 
 -- The declaration is the type signature for a function

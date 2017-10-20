@@ -11,10 +11,30 @@ import Types
 data Exception = Exception { errLine :: Int, errMsg :: String }
 
 -- This is a state which will be carried through typechecking
+-- env should include both function and constructor declarations
 data TypecheckState = TypecheckState { env :: Map String Type
-                                     , funDecls :: [FunDecl]
                                      , typecheckErrors :: [Exception] }
 
+-- Since +, -, *, /, <, <=, and, or are all very similar, we use this function
+-- to typecheck any of those operators
+annotateBinOp :: PosExpr -> PosExpr -> Type -> Type -> Type -> Int ->
+                 String -> State TypecheckState (Maybe TypeExpr)
+annotateBinOp a b t1 t2 t3 l errStr = do
+  m1 <- annotateExpr a
+  m2 <- annotateExpr b
+  case (m1, m2) of
+    (Just x, Just y) ->
+      if (exprType x == t1 && exprType y == t2)
+      then return . Just $ AnnFix (TypeAnn l t3, Add x y)
+      else do
+        st <- get
+        put $ st { typecheckErrors = Exception { errLine = l
+                                               , errMsg = errStr }
+                                      : typecheckErrors st}
+        return Nothing
+    _ -> return Nothing
+
+-- Add a type to an expression
 annotateExpr :: PosExpr -> State TypecheckState (Maybe TypeExpr)
 annotateExpr (AnnFix (l, e)) = case e of
   Id s -> do
@@ -29,62 +49,10 @@ annotateExpr (AnnFix (l, e)) = case e of
   CInt i    -> return . Just $ AnnFix (TypeAnn l (BaseType "Int"), CInt i)
   CString s -> return . Just $ AnnFix (TypeAnn l (BaseType "String"), CString s)
   CBool b   -> return . Just $ AnnFix (TypeAnn l (BaseType "Bool"), CBool b)
-  Add a b -> do
-    m1 <- annotateExpr a
-    m2 <- annotateExpr b
-    case (m1, m2) of
-      (Just x, Just y) ->
-        if (exprType x == BaseType "Int" && exprType y == BaseType "Int")
-        then return . Just $ AnnFix (TypeAnn l (BaseType "Int"), Add x y)
-        else do
-          st <- get
-          put $ st { typecheckErrors = Exception { errLine = l
-                                                 , errMsg = "+ applied to nonintegers" }
-                                        : typecheckErrors st}
-          return Nothing
-      _ -> return Nothing
-  Sub a b -> do
-    m1 <- annotateExpr a
-    m2 <- annotateExpr b
-    case (m1, m2) of
-      (Just x, Just y) ->
-        if (exprType x == BaseType "Int" && exprType y == BaseType "Int")
-        then return . Just $ AnnFix (TypeAnn l (BaseType "Int"), Sub x y)
-        else do
-          st <- get
-          put $ st { typecheckErrors = Exception { errLine = l
-                                                 , errMsg = "- applied to nonintegers" }
-                                       : typecheckErrors st }
-          return Nothing
-      _ -> return Nothing
-  Mul a b -> do
-    m1 <- annotateExpr a
-    m2 <- annotateExpr b
-    case (m1, m2) of
-      (Just x, Just y) ->
-        if (exprType x == BaseType "Int" && exprType y == BaseType "Int")
-        then return . Just $ AnnFix (TypeAnn l (BaseType "Int"), Mul x y)
-        else do
-          st <- get
-          put $ st { typecheckErrors = Exception { errLine = l
-                                                 , errMsg = "* applied to nonintegers" }
-                                       : typecheckErrors st }
-          return Nothing
-      _ -> return Nothing
-  Div a b -> do
-    m1 <- annotateExpr a
-    m2 <- annotateExpr b
-    case (m1, m2) of
-      (Just x, Just y) ->
-        if (exprType x == BaseType "Int" && exprType y == BaseType "Int")
-        then return . Just $ AnnFix (TypeAnn l (BaseType "Int"), Div x y)
-        else do
-          st <- get
-          put $ st { typecheckErrors = Exception { errLine = l
-                                                 , errMsg = "/ applied to nonintegers" }
-                                       : typecheckErrors st }
-          return Nothing
-      _ -> return Nothing
+  Add a b -> annotateBinOp a b (BaseType "Int") (BaseType "Int") (BaseType "Int") l "+ applied to non-integers"
+  Sub a b -> annotateBinOp a b (BaseType "Int") (BaseType "Int") (BaseType "Int") l "- applied to non-integers"
+  Mul a b -> annotateBinOp a b (BaseType "Int") (BaseType "Int") (BaseType "Int") l "* applied to non-integers"
+  Div a b -> annotateBinOp a b (BaseType "Int") (BaseType "Int") (BaseType "Int") l "/ applied to non-integers"
   Neg a -> do
     m <- annotateExpr a
     case m of
@@ -97,20 +65,7 @@ annotateExpr (AnnFix (l, e)) = case e of
                                                : typecheckErrors st }
                   return Nothing
       _ -> return Nothing
-  Lt a b -> do
-    m1 <- annotateExpr a
-    m2 <- annotateExpr b
-    case (m1, m2) of
-      (Just x, Just y) ->
-        if (exprType x == BaseType "Int" && exprType y == BaseType "Int")
-        then return . Just $ AnnFix (TypeAnn l (BaseType "Bool"), Lt x y)
-        else do
-          st <- get
-          put $ st { typecheckErrors = Exception { errLine = l
-                                                 , errMsg = "< applied to nonintegers" }
-                                       : typecheckErrors st }
-          return Nothing
-      _ -> return Nothing
+  Lt a b -> annotateBinOp a b (BaseType "Int") (BaseType "Int") (BaseType "Bool") l "< applied to non-integers"
   Eq a b -> do
     m1 <- annotateExpr a
     m2 <- annotateExpr b
@@ -133,48 +88,9 @@ annotateExpr (AnnFix (l, e)) = case e of
                                          : typecheckErrors st }
             return Nothing
       _ -> return Nothing
-  Le a b -> do
-    m1 <- annotateExpr a
-    m2 <- annotateExpr b
-    case (m1, m2) of
-      (Just x, Just y) ->
-        if (exprType x == BaseType "Int" && exprType y == BaseType "Int")
-        then return . Just $ AnnFix (TypeAnn l (BaseType "Bool"), Le x y)
-        else do
-          st <- get
-          put $ st { typecheckErrors = Exception { errLine = l
-                                                 , errMsg = "<= applied to nonintegers" }
-                                       : typecheckErrors st }
-          return Nothing
-      _ -> return Nothing
-  And a b -> do
-    m1 <- annotateExpr a
-    m2 <- annotateExpr b
-    case (m1, m2) of
-      (Just x, Just y) ->
-        if (exprType x == BaseType "Bool" && exprType y == BaseType "Bool")
-        then return . Just $ AnnFix (TypeAnn l (BaseType "Bool"), And x y)
-        else do
-          st <- get
-          put $ st { typecheckErrors = Exception { errLine = l
-                                                 , errMsg = "'and' applied to nonbooleans" }
-                                       : typecheckErrors st }
-          return Nothing
-      _ -> return Nothing
-  Or a b -> do
-    m1 <- annotateExpr a
-    m2 <- annotateExpr b
-    case (m1, m2) of
-      (Just x, Just y) ->
-        if (exprType x == BaseType "Bool" && exprType y == BaseType "Bool")
-        then return . Just $ AnnFix (TypeAnn l (BaseType "Bool"), Or x y)
-        else do
-          st <- get
-          put $ st { typecheckErrors = Exception { errLine = l
-                                                 , errMsg = "'or' applied to nonbooleans" }
-                                       : typecheckErrors st }
-          return Nothing
-      _ -> return Nothing
+  Le a b -> annotateBinOp a b (BaseType "Int") (BaseType "Int") (BaseType "Bool") l "<= applied to non-integers"
+  And a b -> annotateBinOp a b (BaseType "Bool") (BaseType "Bool") (BaseType "Bool") l "'and' applied to non-booleans"
+  Or a b -> annotateBinOp a b (BaseType "Bool") (BaseType "Bool") (BaseType "Bool") l "'or' applied to non-booleans"
   Not a -> do
     m <- annotateExpr a
     case m of
@@ -196,7 +112,24 @@ annotateExpr (AnnFix (l, e)) = case e of
                types = map exprType ss
            in return . Just $ AnnFix (TypeAnn l (TupleType types), Tuple ss)
   Unit -> return . Just $ AnnFix (TypeAnn l UnitType, Unit)
-  Cons a b -> undefined   -- Cons will need to deal with EmptyList having type (ListType UnitType)
+  Cons a b -> do
+    m1 <- annotateExpr a
+    m2 <- annotateExpr b
+    case (m1, m2) of
+      (Just x, Just y) ->
+        let t = exprType x
+        in if exprType y == ListType t
+           then return . Just $ AnnFix (TypeAnn l (ListType t), Cons x y)
+           else case y of
+             AnnFix (_, EmptyList) ->
+               return . Just $ AnnFix (TypeAnn l (ListType t), Cons x y)
+             _ -> do
+               st <- get
+               put $ st { typecheckErrors = Exception { errLine = l
+                                                      , errMsg = ": applied to wrong typese" }
+                                            : typecheckErrors st }
+               return Nothing
+      _ -> return Nothing
   EmptyList -> return . Just $ AnnFix (TypeAnn l (ListType UnitType), EmptyList)
   Let s a b -> undefined
   Case a cs -> undefined
@@ -243,4 +176,34 @@ annotateExpr (AnnFix (l, e)) = case e of
                                        : typecheckErrors st }
           return Nothing
       _ -> return Nothing
-  Constructor s es -> undefined
+  Internal s -> case s of
+    "concat" -> return . Just $ AnnFix (TypeAnn l (FunctionType
+                                                     (BaseType "String")
+                                                     (FunctionType
+                                                        (BaseType "String")
+                                                        (BaseType "String"))),
+                                        Internal "concat")
+    "substr" -> return . Just $ AnnFix (TypeAnn l (FunctionType
+                                                     (BaseType "String")
+                                                     (FunctionType
+                                                        (BaseType "Int")
+                                                        (FunctionType
+                                                           (BaseType "Int")
+                                                           (BaseType "String")))),
+                                        Internal "substr")
+    "length" -> return . Just $ AnnFix (TypeAnn l (FunctionType
+                                                     (BaseType "String")
+                                                     (BaseType "Int")),
+                                        Internal "length")
+    "printInt" -> return . Just $ AnnFix (TypeAnn l (FunctionType
+                                                       (BaseType "Int")
+                                                       UnitType),
+                                          Internal "printInt")
+    "printString" -> return . Just $ AnnFix (TypeAnn l (FunctionType
+                                                          (BaseType "String")
+                                                          UnitType),
+                                             Internal "printString")
+    "printBool" -> return . Just $ AnnFix (TypeAnn l (FunctionType
+                                                        (BaseType "Bool")
+                                                        UnitType),
+                                           Internal "printBool")

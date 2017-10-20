@@ -180,10 +180,6 @@ Expr :: { PosExpr }
       | case Expr of CaseList   { AnnFix (lineno $1, Case $2 $4) }
       | if Expr then Expr else Expr { AnnFix (lineno $1,
                                               If $2 $4 $6) }
-      | type ExprList   { AnnFix (lineno $1,
-                                  case unTok $1 of
-                                    TType s -> Constructor s $2
-                                    _ -> error "Parse error: bad constructor") }
 
 Application :: { PosExpr }
              : AExpr                { $1 }
@@ -193,6 +189,8 @@ AExpr :: { PosExpr }
       : id       { case unTok $1 of
                      TId s -> AnnFix (lineno $1, Id s)
                      _ -> error "Parse error: bad id" }
+      | type     { case unTok $1 of
+                     TType s -> AnnFix (lineno $1, Id s) }
       | int      { case unTok $1 of
                      TInt i -> AnnFix (lineno $1, CInt i)
                      _ -> error "Parse error: bad int" }
@@ -220,10 +218,6 @@ CaseList :: { [(PExpr, PosExpr)] }
 
 CaseBranch :: { (PExpr, PosExpr) }
             : PExpr '->' Expr   { ($1, $3) }
-
-ExprList :: { [PosExpr] }
-          : {- empty -}     { [] }
-          | ExprList Expr   { $1 ++ [$2] }
 
 Datatype :: { Datatype }
           : data type '=' ConstructorList { case $2 of

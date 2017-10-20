@@ -18,3 +18,6 @@ tuple f a = (a, f a);
 list :: Int -> [(Int, ())];
 list a = (a, ()) : [];
 
+constructor :: Int -> String;
+constructor 0 = Apply constructor to args;
+constructor 1 = apply function Constructor;
