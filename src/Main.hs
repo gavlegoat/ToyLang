@@ -14,7 +14,7 @@ main = do
   str <- readFile (head args)
   let ast = parse str
   let program = collectPieces ast
-  putStrLn . show $ semanticChecks program
+  print $ semanticChecks program
 
 -- Parse: putStrLn . show $ parse str
 -- Lex:  putStrLn . show $ alexTokens str

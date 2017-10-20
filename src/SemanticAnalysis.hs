@@ -41,13 +41,11 @@ builtInDecls = [
 
 builtInDefs :: [PosFunDef]
 builtInDefs = [
-    FunDef "concat"      ([], AnnFix (0, (Internal "concat"     ))) 0
-  , FunDef "substr"      ([], AnnFix (0, (Internal "substr"     ))) 0
-  , FunDef "length"      ([], AnnFix (0, (Internal "length"     ))) 0
-  , FunDef "error"       ([], AnnFix (0, (Internal "error"      ))) 0
-  , FunDef "printInt"    ([], AnnFix (0, (Internal "printInt"   ))) 0
-  , FunDef "printString" ([], AnnFix (0, (Internal "printString"))) 0
-  , FunDef "printBool"   ([], AnnFix (0, (Internal "printBool"  ))) 0
+    FunDef "concat"      ([], AnnFix (0, Internal "concat"     )) 0
+  , FunDef "substr"      ([], AnnFix (0, Internal "substr"     )) 0
+  , FunDef "length"      ([], AnnFix (0, Internal "length"     )) 0
+  , FunDef "error"       ([], AnnFix (0, Internal "error"      )) 0
+  , FunDef "print"       ([], AnnFix (0, Internal "printBool"  )) 0
   ]
 
 builtInTypes :: [Datatype]
@@ -104,6 +102,7 @@ typesExist types l t = case t of
   UnitType -> []
   TupleType ts -> concatMap (typesExist types l) ts
   FunctionType t1 t2 -> typesExist types l t1 ++ typesExist types l t2
+  TypeVar _ -> []
 
 -- Ensure any type showing up in a function signature is defined somewhere
 funTypesExist :: SemanticCheck

@@ -1,9 +1,11 @@
 name:                 ToyLang
 version:              0.1.0.0
 synopsis:             A toy language for playing with Haskell
--- description:
--- license:
--- license-file:
+description:          This is a severly restricted functional programming
+                      language that I'm using as a way to practice building
+                      languages.
+license:              BSD3
+license-file:         LICENSE
 homepage:
 author:               Greg
 maintainer:           ganders@cs.utexas.edu
@@ -13,6 +15,10 @@ build-type:           Simple
 -- extra-source-files:
 cabal-version:        >=1.10
 
+source-repository head
+    type:     git
+    location: https://github.com/gavlegoat/ToyLang
+
 executable ToyLang
   main-is:              Main.hs
   build-tools:          alex, happy
@@ -21,4 +27,5 @@ executable ToyLang
   build-depends:        base >= 4.7 && < 5, mtl >= 2.2 && < 3, array >= 0.5 && < 1,
                         utf8-string >= 1.0 && < 2, containers >= 0.5 && < 1
   hs-source-dirs:       src
+  ghc-options:          -Wall
   default-language:     Haskell2010

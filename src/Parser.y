@@ -88,6 +88,9 @@ Type :: { Type }
       : type                    { case unTok $1 of
                                     TType s -> BaseType s
                                     _ -> error "Parser error: bad type" }
+      | id                      { case unTok $1 of
+                                    TId s -> TypeVar s
+                                    _ -> error "Parser error: bad type" }
       | '[' Type ']'            { ListType $2 }
       | '(' ')'                 { UnitType }
       | '(' Type ')'            { $2 }

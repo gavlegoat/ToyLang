@@ -2,6 +2,8 @@
 
 module Types where
 
+import Control.Arrow ((&&&))
+
 -- Expressions allowed for pattern matching
 data PExpr =
     PId String
@@ -61,9 +63,9 @@ instance Functor ExprF where
   fmap f (Tuple l) = Tuple (map f l)
   fmap f Unit = Unit
   fmap f (Cons a b) = Cons (f a) (f b)
-  fmap f (EmptyList) = EmptyList
+  fmap f EmptyList = EmptyList
   fmap f (Let s a b) = Let s (f a) (f b)
-  fmap f (Case e bs) = Case (f e) (zip (map fst bs) (map (f . snd) bs))
+  fmap f (Case e bs) = Case (f e) (map (fst &&& (f.snd)) bs)
   fmap f (If a b c) = If (f a) (f b) (f c)
   fmap f (App a b) = App (f a) (f b)
   fmap f (Internal s) = Internal s
@@ -75,6 +77,7 @@ data Type = BaseType String
           | UnitType
           | TupleType [Type]
           | FunctionType Type Type
+          | TypeVar String
           deriving (Eq, Show)
 
 newtype AnnFix x f = AnnFix { unAnnFix :: (x, f (AnnFix x f)) }

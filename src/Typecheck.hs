@@ -13,6 +13,7 @@ data Exception = Exception { errLine :: Int, errMsg :: String }
 -- This is a state which will be carried through typechecking
 -- env should include both function and constructor declarations
 data TypecheckState = TypecheckState { env :: Map String Type
+                                     , funDefs :: Map String [PosFunDef]
                                      , typecheckErrors :: [Exception] }
 
 -- Since +, -, *, /, <, <=, and, or are all very similar, we use this function
@@ -24,7 +25,7 @@ annotateBinOp a b t1 t2 t3 l errStr = do
   m2 <- annotateExpr b
   case (m1, m2) of
     (Just x, Just y) ->
-      if (exprType x == t1 && exprType y == t2)
+      if exprType x == t1 && exprType y == t2
       then return . Just $ AnnFix (TypeAnn l t3, Add x y)
       else do
         st <- get
@@ -160,15 +161,17 @@ annotateExpr (AnnFix (l, e)) = case e of
     m2 <- annotateExpr b
     case (m1, m2) of
       (Just x, Just y) -> case exprType x of
-        FunctionType t1 t2 ->
-          if exprType y == t1
-          then return . Just $ AnnFix (TypeAnn l t2, App x y)
-          else do
-            st <- get
-            put $ st { typecheckErrors = Exception { errLine = l
-                                                   , errMsg = "Function applied to bad argument types" }
-                                         : typecheckErrors st }
-            return Nothing
+        FunctionType t1 t2 -> case t1 of
+          TypeVar s -> undefined
+          _ ->
+            if exprType y == t1
+            then return . Just $ AnnFix (TypeAnn l t2, App x y)
+            else do
+              st <- get
+              put $ st { typecheckErrors = Exception { errLine = l
+                                                     , errMsg = "Function applied to bad argument types" }
+                                           : typecheckErrors st }
+              return Nothing
         _ -> do
           st <- get
           put $ st { typecheckErrors = Exception { errLine = l
@@ -195,15 +198,11 @@ annotateExpr (AnnFix (l, e)) = case e of
                                                      (BaseType "String")
                                                      (BaseType "Int")),
                                         Internal "length")
-    "printInt" -> return . Just $ AnnFix (TypeAnn l (FunctionType
-                                                       (BaseType "Int")
-                                                       UnitType),
-                                          Internal "printInt")
-    "printString" -> return . Just $ AnnFix (TypeAnn l (FunctionType
-                                                          (BaseType "String")
-                                                          UnitType),
-                                             Internal "printString")
-    "printBool" -> return . Just $ AnnFix (TypeAnn l (FunctionType
-                                                        (BaseType "Bool")
-                                                        UnitType),
-                                           Internal "printBool")
+    "print" -> return . Just $ AnnFix (TypeAnn l (FunctionType
+                                                    (TypeVar "a")
+                                                    UnitType),
+                                       Internal "print")
+    "error" -> return . Just $ AnnFix (TypeAnn l (FunctionType
+                                                    (BaseType "string")
+                                                    UnitType),
+                                       Internal "error")
